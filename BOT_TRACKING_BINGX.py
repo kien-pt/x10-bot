@@ -102,15 +102,17 @@ class BingXTrackingBot:
                 }
             }
 
+            print_log(f"ROE {operator} {value}")
             try:
                 params = order_params[order_type]
                 order = self.client.futures_create_order_freestyle(params)['order']
-                print(order)
-                print_log(f"{i}. orderId={order['orderId']}, quantity={new_quantity}")
+                print_log(f"Success: orderId = {order['orderId']}")
+                print_log("-----")
                 self.tracking_data[position_id]['trackingData'][i] = order['orderId']
             except Exception as e:
-                print(i, params)
                 print_log(f"Error ordering open order: {e}")
+                print_log(params)
+                print_log("-----")
                 raise
 
     def interval_fn(self):
@@ -127,13 +129,13 @@ class BingXTrackingBot:
         list_opened_position_id = list(set(list_curr_position_id) - set(list_prev_position_id))
 
         for position_id in list_opened_position_id:
-            print(f"Opened: {position_id}")
+            print_log(f"Opened: {position_id}")
             pos = [p for p in list_open_position if p['positionId'] == position_id][0]
             self.tracking_data[pos['positionId']] = pos
             self.tracking_data[pos['positionId']]['trackingData'] = {}
 
         for position_id in list_closed_position_id:
-            print(f"Closed: {position_id}")
+            print_log(f"Closed: {position_id}")
             symbol = self.tracking_data[position_id]['symbol']
             try:
                 self.client.cancel_all_orders(symbol)
