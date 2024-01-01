@@ -70,8 +70,8 @@ class BotTrackingBingX:
 
             if not checked: continue
 
-            order_params = {
-                'TP': {
+            if order_type == 'TP':
+                order_params = {
                     'symbol': symbol,
                     'type': 'LIMIT',
                     'side': close_side,
@@ -79,35 +79,39 @@ class BotTrackingBingX:
                     'price': (side_weight * roe / leverage / 100 + 1) * entry_price,
                     'quantity': new_quantity,
                     'stopPrice': None,
-                },
-                'SL': {
+                }
+            elif order_type == 'SL':
+                stop_price = (-side_weight * roe / leverage / 100 + 1) * entry_price
+                stop_roe = side_weight * (lastest_price / stop_price - 1) * leverage * 100
+                order_params = {
                     'symbol': symbol,
-                    'type': 'STOP_MARKET' if roe < 0 else 'TAKE_PROFIT_MARKET',
+                    'type': 'STOP_MARKET' if stop_roe < 0 else 'TAKE_PROFIT_MARKET',
                     'side': close_side,
                     'positionSide': position_side,
                     'quantity': new_quantity,
-                    'stopPrice': (-side_weight * roe / leverage / 100 + 1) * entry_price,
-                },
-                'CLOSE': {
+                    'stopPrice': stop_price,
+                }
+            elif order_type == 'CLOSE':
+                order_params = {
                     'symbol': symbol,
                     'type': 'MARKET',
                     'side': close_side,
                     'positionSide': position_side,
                     'quantity': new_quantity,
-                },
-                'DCA': {
+                }
+            elif order_type == 'DCA':
+                order_params = {
                     'symbol': symbol,
                     'type': 'MARKET',
                     'side': dca_side,
                     'positionSide': position_side,
                     'quantity': new_quantity,
                 }
-            }
-
+            
             print_log(f"ROE {operator} {value}")
             for _ in range(3):
                 try:
-                    params = order_params[order_type]
+                    params = order_params
                     order = self.client.futures_create_order_freestyle(params)['order']
                     print_log(f"Success: orderId = {order['orderId']}")
                     print_log("-----")
@@ -117,7 +121,7 @@ class BotTrackingBingX:
                     print_log(f"Error ordering open order: {e}")
                     print_log(params)
                     print_log("-----")
-                sleep(1)
+                    sleep(1)
 
 
     def interval_fn(self):
