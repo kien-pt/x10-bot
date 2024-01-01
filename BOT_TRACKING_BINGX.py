@@ -8,7 +8,7 @@ from core.engine.bingx import BingXEngine
 from utils.logger import print_log, save_json_locally
 
 
-class BingXTrackingBot:
+class BotTrackingBingX:
     def __init__(self, api_key, api_secret, path):
         self.client = BingXEngine(api_key, api_secret, True)
         self.params = pd.read_excel(path)
@@ -36,6 +36,8 @@ class BingXTrackingBot:
         quantity = float(position['positionAmt'])
         # mark_price = float(position['markPrice'])
         entry_price = float(position['avgPrice'])
+
+        if entry_price == 0: return
 
         try:
             lastest_price = float(self.client.latest_price(symbol)['price'])
@@ -103,17 +105,20 @@ class BingXTrackingBot:
             }
 
             print_log(f"ROE {operator} {value}")
-            try:
-                params = order_params[order_type]
-                order = self.client.futures_create_order_freestyle(params)['order']
-                print_log(f"Success: orderId = {order['orderId']}")
-                print_log("-----")
-                self.tracking_data[position_id]['trackingData'][i] = order['orderId']
-            except Exception as e:
-                print_log(f"Error ordering open order: {e}")
-                print_log(params)
-                print_log("-----")
-                raise
+            for _ in range(3):
+                try:
+                    params = order_params[order_type]
+                    order = self.client.futures_create_order_freestyle(params)['order']
+                    print_log(f"Success: orderId = {order['orderId']}")
+                    print_log("-----")
+                    self.tracking_data[position_id]['trackingData'][i] = order['orderId']
+                    break
+                except Exception as e:
+                    print_log(f"Error ordering open order: {e}")
+                    print_log(params)
+                    print_log("-----")
+                sleep(1)
+
 
     def interval_fn(self):
         try:
@@ -151,7 +156,7 @@ class BingXTrackingBot:
             try:
                 self.interval_fn()
                 counter += 1
-                if counter % 20 == 0:
+                if counter % 10 == 0:
                     save_json_locally('data/tracking_data.json', self.tracking_data)
                 sleep(2)
             except KeyboardInterrupt:
