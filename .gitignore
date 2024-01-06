@@ -1,0 +1,9 @@
+venv
+
+.env
+.ipynb_checkpoints
+*.session
+
+.DS_Store
+
+__pycache__
