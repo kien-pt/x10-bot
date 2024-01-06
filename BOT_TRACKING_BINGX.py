@@ -54,7 +54,7 @@ class BotTrackingBingX:
         max_roe = roe_v2
 
         for i, row in self.params.iterrows():
-            if i in self.tracking_data[position_id]['trackingData']: continue
+            if str(i) in self.tracking_data[position_id]['trackingData']: continue
 
             roe = row['ROE']
             value = row['Value']
@@ -107,11 +107,6 @@ class BotTrackingBingX:
                     'positionSide': position_side,
                     'quantity': new_quantity,
                 }
-            elif order_type == 'CANCEL':
-                order_params = {
-                    'symbol': symbol,
-                    'orderIdList': [self.tracking_data[position_id]['trackingData'][value]]
-                }
             
             print_log(f"ROE {operator} {value}")
             for _ in range(3):
@@ -120,13 +115,15 @@ class BotTrackingBingX:
                         order = self.client.futures_create_order_freestyle(order_params)['order']
                         print_log(f"Success: orderId = {order['orderId']}")
                         print_log("-----")
-                        self.tracking_data[position_id]['trackingData'][i] = order['orderId']
-                    elif order_type in ['CANCEL']:
-                        response = self.client.cancel_orders(order_params)['order']
+                        self.tracking_data[position_id]['trackingData'][str(i)] = order['orderId']
+                    elif order_type == 'CANCEL':
+                        _index = str(row['Quantity'])
+                        _orderIdList = [self.tracking_data[position_id]['trackingData'][_index]]
+                        response = self.client.cancel_orders(symbol, _orderIdList)
                         print(response)
-                        print_log(f"Success: canceled {order_params['orderIdList']}")
+                        print_log(f"Success: canceled {_orderIdList}")
                         print_log("-----")
-                        self.tracking_data[position_id]['trackingData'][i] = True
+                        self.tracking_data[position_id]['trackingData'][str(i)] = True
                     break
                 except Exception as e:
                     print_log(f"Error ordering open order: {e}")
