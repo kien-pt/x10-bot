@@ -107,19 +107,30 @@ class BotTrackingBingX:
                     'positionSide': position_side,
                     'quantity': new_quantity,
                 }
+            elif order_type == 'CANCEL':
+                order_params = {
+                    'symbol': symbol,
+                    'orderIdList': [self.tracking_data[position_id]['trackingData'][value]]
+                }
             
             print_log(f"ROE {operator} {value}")
             for _ in range(3):
                 try:
-                    params = order_params
-                    order = self.client.futures_create_order_freestyle(params)['order']
-                    print_log(f"Success: orderId = {order['orderId']}")
-                    print_log("-----")
-                    self.tracking_data[position_id]['trackingData'][i] = order['orderId']
+                    if order_type in ['TP', 'SL', 'CLOSE', 'DCA']:
+                        order = self.client.futures_create_order_freestyle(order_params)['order']
+                        print_log(f"Success: orderId = {order['orderId']}")
+                        print_log("-----")
+                        self.tracking_data[position_id]['trackingData'][i] = order['orderId']
+                    elif order_type in ['CANCEL']:
+                        response = self.client.cancel_orders(order_params)['order']
+                        print(response)
+                        print_log(f"Success: canceled {order_params['orderIdList']}")
+                        print_log("-----")
+                        self.tracking_data[position_id]['trackingData'][i] = True
                     break
                 except Exception as e:
                     print_log(f"Error ordering open order: {e}")
-                    print_log(params)
+                    print_log(order_params)
                     print_log("-----")
                     sleep(1)
 
