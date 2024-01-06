@@ -82,7 +82,7 @@ class BotTrackingBingX:
                 }
             elif order_type == 'SL':
                 stop_price = (-side_weight * roe / leverage / 100 + 1) * entry_price
-                stop_roe = side_weight * (lastest_price / stop_price - 1) * leverage * 100
+                stop_roe = side_weight * (stop_price / lastest_price - 1) * leverage * 100
                 order_params = {
                     'symbol': symbol,
                     'type': 'STOP_MARKET' if stop_roe < 0 else 'TAKE_PROFIT_MARKET',
@@ -165,6 +165,7 @@ class BotTrackingBingX:
                 sleep(2)
             except KeyboardInterrupt:
                 sys.exit()
-            except:
-                raise
+            except Exception as e:
+                print(e)
+                pass
     
